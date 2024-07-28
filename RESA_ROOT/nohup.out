@@ -1,0 +1,317 @@
+2023-07-19 10:18:39,157 - resa - INFO - Config: 
+/home/ulc2sgh/laneDetectionFeature/RESA_ROOT/configs/culane.py
+net = dict(
+    type='RESANet',
+)
+
+backbone = dict(
+    type='ResNetWrapper',
+    resnet='resnet50',
+    pretrained=True,
+    replace_stride_with_dilation=[False, True, True],
+    out_conv=True,
+    fea_stride=8,
+)
+
+resa = dict(
+    type='RESA',
+    alpha=2.0,
+    iter=4,
+    input_channel=128,
+    conv_stride=9,
+)
+
+decoder = 'PlainDecoder'        
+
+trainer = dict(
+    type='RESA'
+)
+
+evaluator = dict(
+    type='CULane',        
+)
+
+optimizer = dict(
+  type='sgd',
+  lr=0.025,
+  weight_decay=1e-4,
+  momentum=0.9
+)
+
+epochs = 20
+batch_size = 240 # 6 wangye 180 terminal 240
+total_iter = (88880 // batch_size) * epochs
+import math
+scheduler = dict(
+    type = 'LambdaLR',
+    lr_lambda = lambda _iter : math.pow(1 - _iter/total_iter, 0.9)
+)
+
+loss_type = 'dice_loss'
+seg_loss_weight = 2.
+eval_ep = 6
+save_ep = epochs
+
+bg_weight = 0.4
+
+img_norm = dict(
+    mean=[103.939, 116.779, 123.68],
+    std=[1., 1., 1.]
+)
+
+img_height = 288
+img_width = 800
+cut_height = 240 
+
+dataset_path = './data/CULane'
+dataset = dict(
+    train=dict(
+        type='CULane',
+        img_path=dataset_path,
+        data_list='train_gt.txt', # train_gt.txt
+    ),
+    val=dict(
+        type='CULane',
+        img_path=dataset_path,
+        data_list='test.txt', # test.txt
+    ),
+    test=dict(
+        type='CULane',
+        img_path=dataset_path,
+        data_list='test.txt', # test.txt
+    )
+) 
+
+
+workers = 8 # 12
+num_classes = 4 + 1
+ignore_label = 255
+log_interval = 500
+
+2023-07-19 10:18:41,193 - resa - INFO - Network: 
+DataParallel(
+  (module): RESANet(
+    (enhance): enhance_net(
+      (model): enhance_net_nopool(
+        (relu): ReLU(inplace=True)
+        (e_conv1): Conv2d(3, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (e_conv2): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (e_conv3): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (e_conv4): Conv2d(32, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (e_conv5): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (e_conv6): Conv2d(64, 32, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (e_conv7): Conv2d(64, 24, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (maxpool): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+        (upsample): UpsamplingBilinear2d(scale_factor=2.0, mode='bilinear')
+      )
+    )
+    (backbone): ResNetWrapper(
+      (model): ResNet(
+        (conv1): Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        (relu): ReLU(inplace=True)
+        (maxpool): MaxPool2d(kernel_size=3, stride=2, padding=1, dilation=1, ceil_mode=False)
+        (layer1): Sequential(
+          (0): Bottleneck(
+            (conv1): Conv2d(64, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+            (downsample): Sequential(
+              (0): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            )
+          )
+          (1): Bottleneck(
+            (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+          (2): Bottleneck(
+            (conv1): Conv2d(256, 64, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn2): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(64, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+        )
+        (layer2): Sequential(
+          (0): Bottleneck(
+            (conv1): Conv2d(256, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+            (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+            (downsample): Sequential(
+              (0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+              (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            )
+          )
+          (1): Bottleneck(
+            (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+          (2): Bottleneck(
+            (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+          (3): Bottleneck(
+            (conv1): Conv2d(512, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn2): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+        )
+        (layer3): Sequential(
+          (0): Bottleneck(
+            (conv1): Conv2d(512, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+            (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+            (downsample): Sequential(
+              (0): Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (1): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            )
+          )
+          (1): Bottleneck(
+            (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+            (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+          (2): Bottleneck(
+            (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+            (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+          (3): Bottleneck(
+            (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+            (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+          (4): Bottleneck(
+            (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+            (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+          (5): Bottleneck(
+            (conv1): Conv2d(1024, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+            (bn2): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(256, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+        )
+        (layer4): Sequential(
+          (0): Bottleneck(
+            (conv1): Conv2d(1024, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(2, 2), dilation=(2, 2), bias=False)
+            (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+            (downsample): Sequential(
+              (0): Conv2d(1024, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+              (1): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            )
+          )
+          (1): Bottleneck(
+            (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), bias=False)
+            (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+          (2): Bottleneck(
+            (conv1): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(4, 4), dilation=(4, 4), bias=False)
+            (bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (conv3): Conv2d(512, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+            (bn3): BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu): ReLU(inplace=True)
+          )
+        )
+      )
+      (out): Conv2d(2048, 128, kernel_size=(1, 1), stride=(1, 1), bias=False)
+    )
+    (resa): RESA(
+      (conv_d0): Conv2d(128, 128, kernel_size=(1, 9), stride=(1, 1), padding=(0, 4), bias=False)
+      (conv_u0): Conv2d(128, 128, kernel_size=(1, 9), stride=(1, 1), padding=(0, 4), bias=False)
+      (conv_r0): Conv2d(128, 128, kernel_size=(9, 1), stride=(1, 1), padding=(4, 0), bias=False)
+      (conv_l0): Conv2d(128, 128, kernel_size=(9, 1), stride=(1, 1), padding=(4, 0), bias=False)
+      (conv_d1): Conv2d(128, 128, kernel_size=(1, 9), stride=(1, 1), padding=(0, 4), bias=False)
+      (conv_u1): Conv2d(128, 128, kernel_size=(1, 9), stride=(1, 1), padding=(0, 4), bias=False)
+      (conv_r1): Conv2d(128, 128, kernel_size=(9, 1), stride=(1, 1), padding=(4, 0), bias=False)
+      (conv_l1): Conv2d(128, 128, kernel_size=(9, 1), stride=(1, 1), padding=(4, 0), bias=False)
+      (conv_d2): Conv2d(128, 128, kernel_size=(1, 9), stride=(1, 1), padding=(0, 4), bias=False)
+      (conv_u2): Conv2d(128, 128, kernel_size=(1, 9), stride=(1, 1), padding=(0, 4), bias=False)
+      (conv_r2): Conv2d(128, 128, kernel_size=(9, 1), stride=(1, 1), padding=(4, 0), bias=False)
+      (conv_l2): Conv2d(128, 128, kernel_size=(9, 1), stride=(1, 1), padding=(4, 0), bias=False)
+      (conv_d3): Conv2d(128, 128, kernel_size=(1, 9), stride=(1, 1), padding=(0, 4), bias=False)
+      (conv_u3): Conv2d(128, 128, kernel_size=(1, 9), stride=(1, 1), padding=(0, 4), bias=False)
+      (conv_r3): Conv2d(128, 128, kernel_size=(9, 1), stride=(1, 1), padding=(4, 0), bias=False)
+      (conv_l3): Conv2d(128, 128, kernel_size=(9, 1), stride=(1, 1), padding=(4, 0), bias=False)
+    )
+    (decoder): PlainDecoder(
+      (dropout): Dropout2d(p=0.1, inplace=False)
+      (conv8): Conv2d(128, 5, kernel_size=(1, 1), stride=(1, 1))
+    )
+    (heads): ExistHead(
+      (dropout): Dropout2d(p=0.1, inplace=False)
+      (conv8): Conv2d(128, 5, kernel_size=(1, 1), stride=(1, 1))
+      (fc9): Linear(in_features=4500, out_features=128, bias=True)
+      (fc10): Linear(in_features=128, out_features=4, bias=True)
+    )
+  )
+)
+/home/ulc2sgh/.conda/envs/resa/lib/python3.8/site-packages/torch/utils/data/dataloader.py:560: UserWarning: This DataLoader will create 8 worker processes in total. Our suggested max number of worker in current system is 5, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(_create_warning_msg(
+PcaTrain:   0%|          | 0/371 [00:00<?, ?it/s]PcaTrain:   0%|          | 1/371 [00:40<4:09:49, 40.51s/it]PcaTrain:   1%|          | 2/371 [01:09<3:26:38, 33.60s/it]PcaTrain:   1%|          | 3/371 [01:31<2:55:02, 28.54s/it]PcaTrain:   1%|          | 4/371 [01:43<2:14:13, 21.95s/it]PcaTrain:   1%|▏         | 5/371 [02:07<2:18:50, 22.76s/it]PcaTrain:   2%|▏         | 6/371 [02:31<2:20:50, 23.15s/it]PcaTrain:   2%|▏         | 7/371 [03:15<3:00:47, 29.80s/it]PcaTrain:   2%|▏         | 8/371 [03:17<2:07:53, 21.14s/it]PcaTrain:   2%|▏         | 9/371 [03:20<1:32:17, 15.30s/it]PcaTrain:   3%|▎         | 10/371 [04:10<2:36:50, 26.07s/it]PcaTrain:   3%|▎         | 11/371 [04:31<2:27:41, 24.61s/it]PcaTrain:   3%|▎         | 12/371 [04:52<2:21:05, 23.58s/it]PcaTrain:   4%|▎         | 13/371 [05:16<2:20:52, 23.61s/it]PcaTrain:   4%|▍         | 14/371 [05:39<2:19:44, 23.49s/it]PcaTrain:   4%|▍         | 15/371 [06:03<2:18:45, 23.39s/it]PcaTrain:   4%|▍         | 16/371 [06:26<2:17:42, 23.27s/it]PcaTrain:   5%|▍         | 17/371 [06:48<2:15:26, 22.96s/it]PcaTrain:   5%|▍         | 18/371 [07:10<2:13:29, 22.69s/it]PcaTrain:   5%|▌         | 19/371 [07:38<2:22:37, 24.31s/it]PcaTrain:   5%|▌         | 20/371 [08:10<2:35:16, 26.54s/it]PcaTrain:   6%|▌         | 21/371 [08:13<1:53:43, 19.49s/it]PcaTrain:   6%|▌         | 22/371 [08:47<2:18:46, 23.86s/it]PcaTrain:   6%|▌         | 23/371 [09:13<2:22:08, 24.51s/it]PcaTrain:   6%|▋         | 24/371 [09:24<1:58:44, 20.53s/it]PcaTrain:   7%|▋         | 25/371 [09:48<2:03:57, 21.49s/it]PcaTrain:   7%|▋         | 26/371 [10:11<2:07:04, 22.10s/it]PcaTrain:   7%|▋         | 27/371 [10:36<2:10:31, 22.76s/it]PcaTrain:   8%|▊         | 28/371 [11:09<2:28:24, 25.96s/it]PcaTrain:   8%|▊         | 29/371 [11:12<1:48:57, 19.11s/it]PcaTrain:   8%|▊         | 30/371 [11:39<2:02:22, 21.53s/it]PcaTrain:   8%|▊         | 31/371 [12:00<2:01:10, 21.38s/it]PcaTrain:   9%|▊         | 32/371 [12:35<2:23:53, 25.47s/it]PcaTrain:   9%|▉         | 33/371 [12:57<2:17:01, 24.32s/it]PcaTrain:   9%|▉         | 34/371 [13:04<1:47:32, 19.15s/it]PcaTrain:   9%|▉         | 35/371 [13:26<1:52:26, 20.08s/it]PcaTrain:  10%|▉         | 36/371 [13:50<1:58:26, 21.21s/it]PcaTrain:  10%|▉         | 37/371 [14:12<1:58:56, 21.37s/it]PcaTrain:  10%|█         | 38/371 [14:34<2:00:27, 21.71s/it]PcaTrain:  11%|█         | 39/371 [15:17<2:33:55, 27.82s/it]PcaTrain:  11%|█         | 40/371 [15:21<1:54:12, 20.70s/it]PcaTrain:  11%|█         | 41/371 [15:46<2:01:02, 22.01s/it]PcaTrain:  11%|█▏        | 42/371 [16:08<2:01:43, 22.20s/it]PcaTrain:  12%|█▏        | 43/371 [16:44<2:23:20, 26.22s/it]PcaTrain:  12%|█▏        | 44/371 [17:01<2:07:34, 23.41s/it]PcaTrain:  12%|█▏        | 45/371 [17:31<2:18:08, 25.42s/it]PcaTrain:  12%|█▏        | 46/371 [17:52<2:10:26, 24.08s/it]PcaTrain:  13%|█▎        | 47/371 [17:56<1:38:27, 18.23s/it]PcaTrain:  13%|█▎        | 48/371 [18:41<2:20:25, 26.08s/it]PcaTrain:  13%|█▎        | 49/371 [19:11<2:25:50, 27.18s/it]PcaTrain:  13%|█▎        | 50/371 [19:25<2:04:44, 23.32s/it]PcaTrain:  14%|█▎        | 51/371 [19:47<2:03:06, 23.08s/it]PcaTrain:  14%|█▍        | 52/371 [20:11<2:03:12, 23.17s/it]PcaTrain:  14%|█▍        | 53/371 [20:33<2:02:00, 23.02s/it]PcaTrain:  15%|█▍        | 54/371 [21:00<2:07:59, 24.22s/it]PcaTrain:  15%|█▍        | 55/371 [21:18<1:56:51, 22.19s/it]PcaTrain:  15%|█▌        | 56/371 [21:41<1:58:35, 22.59s/it]PcaTrain:  15%|█▌        | 57/371 [22:07<2:02:22, 23.39s/it]PcaTrain:  16%|█▌        | 58/371 [22:29<2:00:29, 23.10s/it]PcaTrain:  16%|█▌        | 59/371 [22:51<1:57:46, 22.65s/it]PcaTrain:  16%|█▌        | 60/371 [23:28<2:20:45, 27.16s/it]PcaTrain:  16%|█▋        | 61/371 [23:38<1:53:35, 21.99s/it]PcaTrain:  17%|█▋        | 62/371 [24:05<2:00:35, 23.41s/it]PcaTrain:  17%|█▋        | 63/371 [24:15<1:39:41, 19.42s/it]PcaTrain:  17%|█▋        | 64/371 [24:40<1:47:34, 21.03s/it]PcaTrain:  18%|█▊        | 65/371 [25:02<1:48:55, 21.36s/it]PcaTrain:  18%|█▊        | 66/371 [25:24<1:48:56, 21.43s/it]PcaTrain:  18%|█▊        | 67/371 [25:48<1:52:23, 22.18s/it]PcaTrain:  18%|█▊        | 68/371 [26:23<2:12:29, 26.24s/it]PcaTrain:  19%|█▊        | 69/371 [26:29<1:41:26, 20.15s/it]PcaTrain:  19%|█▉        | 70/371 [27:02<1:59:31, 23.83s/it]PcaTrain:  19%|█▉        | 71/371 [27:16<1:44:46, 20.95s/it]PcaTrain:  19%|█▉        | 72/371 [27:33<1:38:02, 19.67s/it]PcaTrain:  20%|█▉        | 73/371 [28:13<2:08:34, 25.89s/it]PcaTrain:  20%|█▉        | 74/371 [28:22<1:43:21, 20.88s/it]PcaTrain:  20%|██        | 75/371 [28:45<1:45:47, 21.44s/it]PcaTrain:  20%|██        | 76/371 [29:24<2:11:39, 26.78s/it]PcaTrain:  21%|██        | 77/371 [29:27<1:35:27, 19.48s/it]PcaTrain:  21%|██        | 78/371 [29:29<1:10:03, 14.35s/it]PcaTrain:  21%|██▏       | 79/371 [30:19<2:02:05, 25.09s/it]PcaTrain:  22%|██▏       | 80/371 [30:49<2:08:09, 26.42s/it]PcaTrain:  22%|██▏       | 81/371 [31:00<1:45:37, 21.85s/it]PcaTrain:  22%|██▏       | 82/371 [31:22<1:45:02, 21.81s/it]PcaTrain:  22%|██▏       | 83/371 [32:02<2:10:46, 27.25s/it]PcaTrain:  23%|██▎       | 84/371 [32:04<1:34:45, 19.81s/it]PcaTrain:  23%|██▎       | 85/371 [32:06<1:09:40, 14.62s/it]PcaTrain:  23%|██▎       | 86/371 [33:10<2:19:19, 29.33s/it]PcaTrain:  23%|██▎       | 87/371 [33:16<1:45:51, 22.36s/it]PcaTrain:  24%|██▎       | 88/371 [33:39<1:46:21, 22.55s/it]PcaTrain:  24%|██▍       | 89/371 [34:00<1:44:06, 22.15s/it]PcaTrain:  24%|██▍       | 90/371 [34:46<2:16:08, 29.07s/it]PcaTrain:  25%|██▍       | 91/371 [34:48<1:38:25, 21.09s/it]PcaTrain:  25%|██▍       | 92/371 [34:51<1:12:01, 15.49s/it]PcaTrain:  25%|██▌       | 93/371 [35:43<2:03:42, 26.70s/it]PcaTrain:  25%|██▌       | 94/371 [36:12<2:05:31, 27.19s/it]PcaTrain:  26%|██▌       | 95/371 [36:16<1:34:03, 20.45s/it]PcaTrain:  26%|██▌       | 96/371 [36:36<1:31:48, 20.03s/it]PcaTrain:  26%|██▌       | 97/371 [37:19<2:03:15, 26.99s/it]PcaTrain:  26%|██▋       | 98/371 [37:22<1:30:22, 19.86s/it]PcaTrain:  27%|██▋       | 99/371 [37:48<1:38:51, 21.81s/it]PcaTrain:  27%|██▋       | 100/371 [38:10<1:38:04, 21.71s/it]PcaTrain:  27%|██▋       | 101/371 [38:33<1:39:57, 22.21s/it]PcaTrain:  27%|██▋       | 102/371 [39:04<1:50:48, 24.72s/it]PcaTrain:  28%|██▊       | 103/371 [39:16<1:33:06, 20.85s/it]PcaTrain:  28%|██▊       | 104/371 [39:52<1:53:34, 25.52s/it]PcaTrain:  28%|██▊       | 105/371 [39:55<1:22:48, 18.68s/it]PcaTrain:  29%|██▊       | 106/371 [39:57<1:00:55, 13.80s/it]PcaTrain:  29%|██▉       | 107/371 [40:49<1:51:01, 25.23s/it]PcaTrain:  29%|██▉       | 108/371 [41:27<2:06:43, 28.91s/it]PcaTrain:  29%|██▉       | 109/371 [41:30<1:33:26, 21.40s/it]PcaTrain:  30%|██▉       | 110/371 [41:55<1:36:52, 22.27s/it]PcaTrain:  30%|██▉       | 111/371 [42:18<1:37:36, 22.52s/it]PcaTrain:  30%|███       | 112/371 [42:39<1:35:22, 22.09s/it]PcaTrain:  30%|███       | 113/371 [43:00<1:34:00, 21.86s/it]PcaTrain:  31%|███       | 114/371 [43:22<1:33:47, 21.90s/it]PcaTrain:  31%|███       | 115/371 [44:03<1:57:43, 27.59s/it]PcaTrain:  31%|███▏      | 116/371 [44:06<1:25:23, 20.09s/it]PcaTrain:  32%|███▏      | 117/371 [44:08<1:02:34, 14.78s/it]PcaTrain:  32%|███▏      | 118/371 [44:58<1:46:31, 25.26s/it]PcaTrain:  32%|███▏      | 119/371 [45:21<1:43:26, 24.63s/it]PcaTrain:  32%|███▏      | 120/371 [45:42<1:38:21, 23.51s/it]PcaTrain:  33%|███▎      | 121/371 [46:04<1:36:49, 23.24s/it]PcaTrain:  33%|███▎      | 122/371 [46:28<1:37:10, 23.41s/it]PcaTrain:  33%|███▎      | 123/371 [46:53<1:38:19, 23.79s/it]PcaTrain:  33%|███▎      | 124/371 [47:12<1:32:39, 22.51s/it]PcaTrain:  34%|███▎      | 125/371 [47:45<1:44:31, 25.50s/it]PcaTrain:  34%|███▍      | 126/371 [47:54<1:23:31, 20.46s/it]PcaTrain:  34%|███▍      | 127/371 [48:28<1:40:38, 24.75s/it]PcaTrain:  35%|███▍      | 128/371 [48:35<1:18:25, 19.36s/it]PcaTrain:  35%|███▍      | 129/371 [48:55<1:18:21, 19.43s/it]PcaTrain:  35%|███▌      | 130/371 [49:11<1:13:42, 18.35s/it]PcaTrain:  35%|███▌      | 131/371 [49:48<1:36:21, 24.09s/it]PcaTrain:  36%|███▌      | 132/371 [49:54<1:14:42, 18.76s/it]PcaTrain:  36%|███▌      | 133/371 [50:22<1:25:20, 21.51s/it]PcaTrain:  36%|███▌      | 134/371 [50:38<1:17:57, 19.74s/it]PcaTrain:  36%|███▋      | 135/371 [50:59<1:19:45, 20.28s/it]PcaTrain:  37%|███▋      | 136/371 [51:24<1:24:21, 21.54s/it]PcaTrain:  37%|███▋      | 137/371 [51:47<1:25:50, 22.01s/it]PcaTrain:  37%|███▋      | 138/371 [52:13<1:29:37, 23.08s/it]PcaTrain:  37%|███▋      | 139/371 [52:29<1:21:04, 20.97s/it]PcaTrain:  38%|███▊      | 140/371 [52:51<1:22:47, 21.50s/it]PcaTrain:  38%|███▊      | 141/371 [53:21<1:31:11, 23.79s/it]PcaTrain:  38%|███▊      | 142/371 [53:37<1:22:14, 21.55s/it]PcaTrain:  39%|███▊      | 143/371 [54:00<1:23:32, 21.98s/it]PcaTrain:  39%|███▉      | 144/371 [54:46<1:50:41, 29.26s/it]PcaTrain:  39%|███▉      | 145/371 [54:49<1:20:05, 21.26s/it]PcaTrain:  39%|███▉      | 146/371 [54:51<58:28, 15.59s/it]  PcaTrain:  40%|███▉      | 147/371 [55:48<1:44:57, 28.12s/it]PcaTrain:  40%|███▉      | 148/371 [56:00<1:25:54, 23.11s/it]PcaTrain:  40%|████      | 149/371 [56:24<1:26:39, 23.42s/it]PcaTrain:  40%|████      | 150/371 [56:58<1:37:28, 26.46s/it]PcaTrain:  41%|████      | 151/371 [57:04<1:14:54, 20.43s/it]PcaTrain:  41%|████      | 152/371 [57:35<1:26:28, 23.69s/it]PcaTrain:  41%|████      | 153/371 [58:06<1:34:18, 25.96s/it]PcaTrain:  42%|████▏     | 154/371 [58:09<1:08:47, 19.02s/it]PcaTrain:  42%|████▏     | 155/371 [58:51<1:33:20, 25.93s/it]PcaTrain:  42%|████▏     | 156/371 [59:16<1:31:26, 25.52s/it]PcaTrain:  42%|████▏     | 157/371 [59:18<1:06:12, 18.56s/it]PcaTrain:  43%|████▎     | 158/371 [59:21<48:39, 13.71s/it]  PcaTrain:  43%|████▎     | 159/371 [1:00:28<1:45:33, 29.87s/it]PcaTrain:  43%|████▎     | 160/371 [1:00:31<1:16:33, 21.77s/it]PcaTrain:  43%|████▎     | 161/371 [1:01:17<1:42:06, 29.17s/it]PcaTrain:  44%|████▎     | 162/371 [1:01:22<1:15:38, 21.71s/it]PcaTrain:  44%|████▍     | 163/371 [1:01:58<1:30:00, 25.96s/it]PcaTrain:  44%|████▍     | 164/371 [1:02:06<1:11:16, 20.66s/it]PcaTrain:  44%|████▍     | 165/371 [1:02:39<1:23:54, 24.44s/it]PcaTrain:  45%|████▍     | 166/371 [1:03:09<1:28:44, 25.98s/it]PcaTrain:  45%|████▌     | 167/371 [1:03:19<1:11:52, 21.14s/it]PcaTrain:  45%|████▌     | 168/371 [1:03:38<1:09:13, 20.46s/it]PcaTrain:  46%|████▌     | 169/371 [1:04:12<1:23:01, 24.66s/it]PcaTrain:  46%|████▌     | 170/371 [1:04:19<1:04:47, 19.34s/it]PcaTrain:  46%|████▌     | 171/371 [1:04:57<1:23:34, 25.07s/it]PcaTrain:  46%|████▋     | 172/371 [1:05:10<1:11:11, 21.47s/it]PcaTrain:  47%|████▋     | 173/371 [1:05:13<51:58, 15.75s/it]  PcaTrain:  47%|████▋     | 174/371 [1:06:10<1:32:27, 28.16s/it]PcaTrain:  47%|████▋     | 175/371 [1:06:12<1:06:46, 20.44s/it]PcaTrain:  47%|████▋     | 176/371 [1:06:15<48:50, 15.03s/it]  PcaTrain:  48%|████▊     | 177/371 [1:07:05<1:22:59, 25.67s/it]PcaTrain:  48%|████▊     | 178/371 [1:07:26<1:18:05, 24.28s/it]PcaTrain:  48%|████▊     | 179/371 [1:07:50<1:16:53, 24.03s/it]PcaTrain:  49%|████▊     | 180/371 [1:08:12<1:14:57, 23.55s/it]PcaTrain:  49%|████▉     | 181/371 [1:08:44<1:22:40, 26.11s/it]PcaTrain:  49%|████▉     | 182/371 [1:08:58<1:10:24, 22.35s/it]PcaTrain:  49%|████▉     | 183/371 [1:09:21<1:10:21, 22.46s/it]PcaTrain:  50%|████▉     | 184/371 [1:09:59<1:25:21, 27.39s/it]PcaTrain:  50%|████▉     | 185/371 [1:10:03<1:02:29, 20.16s/it]PcaTrain:  50%|█████     | 186/371 [1:10:36<1:14:12, 24.07s/it]PcaTrain:  50%|█████     | 187/371 [1:10:50<1:04:28, 21.03s/it]PcaTrain:  51%|█████     | 188/371 [1:11:17<1:09:29, 22.79s/it]PcaTrain:  51%|█████     | 189/371 [1:11:38<1:07:23, 22.22s/it]PcaTrain:  51%|█████     | 190/371 [1:12:11<1:16:51, 25.48s/it]PcaTrain:  51%|█████▏    | 191/371 [1:12:15<56:56, 18.98s/it]  PcaTrain:  52%|█████▏    | 192/371 [1:13:00<1:20:11, 26.88s/it]PcaTrain:  52%|█████▏    | 193/371 [1:13:02<57:58, 19.54s/it]  PcaTrain:  52%|█████▏    | 194/371 [1:13:05<42:30, 14.41s/it]PcaTrain:  53%|█████▎    | 195/371 [1:14:03<1:20:59, 27.61s/it]PcaTrain:  53%|█████▎    | 196/371 [1:14:14<1:06:06, 22.67s/it]PcaTrain:  53%|█████▎    | 197/371 [1:14:55<1:21:17, 28.03s/it]PcaTrain:  53%|█████▎    | 198/371 [1:14:58<59:39, 20.69s/it]  PcaTrain:  54%|█████▎    | 199/371 [1:15:26<1:05:28, 22.84s/it]PcaTrain:  54%|█████▍    | 200/371 [1:15:46<1:02:33, 21.95s/it]PcaTrain:  54%|█████▍    | 201/371 [1:16:09<1:03:07, 22.28s/it]PcaTrain:  54%|█████▍    | 202/371 [1:16:34<1:04:39, 22.95s/it]PcaTrain:  55%|█████▍    | 203/371 [1:17:03<1:09:35, 24.86s/it]PcaTrain:  55%|█████▍    | 204/371 [1:17:15<58:32, 21.03s/it]  PcaTrain:  55%|█████▌    | 205/371 [1:17:29<52:29, 18.98s/it]PcaTrain:  56%|█████▌    | 206/371 [1:17:55<57:46, 21.01s/it]PcaTrain:  56%|█████▌    | 207/371 [1:18:18<58:41, 21.47s/it]PcaTrain:  56%|█████▌    | 208/371 [1:18:54<1:10:50, 26.08s/it]PcaTrain:  56%|█████▋    | 209/371 [1:18:58<52:27, 19.43s/it]  PcaTrain:  57%|█████▋    | 210/371 [1:19:22<55:37, 20.73s/it]PcaTrain:  57%|█████▋    | 211/371 [1:19:43<55:24, 20.78s/it]PcaTrain:  57%|█████▋    | 212/371 [1:20:05<56:13, 21.22s/it]PcaTrain:  57%|█████▋    | 213/371 [1:20:24<54:02, 20.52s/it]PcaTrain:  58%|█████▊    | 214/371 [1:21:03<1:08:29, 26.18s/it]PcaTrain:  58%|█████▊    | 215/371 [1:21:28<1:06:33, 25.60s/it]PcaTrain:  58%|█████▊    | 216/371 [1:21:39<55:00, 21.29s/it]  PcaTrain:  58%|█████▊    | 217/371 [1:21:52<48:27, 18.88s/it]PcaTrain:  59%|█████▉    | 218/371 [1:22:26<59:13, 23.23s/it]PcaTrain:  59%|█████▉    | 219/371 [1:22:48<57:59, 22.89s/it]PcaTrain:  59%|█████▉    | 220/371 [1:22:56<46:33, 18.50s/it]PcaTrain:  60%|█████▉    | 221/371 [1:23:18<49:03, 19.63s/it]PcaTrain:  60%|█████▉    | 222/371 [1:23:41<51:15, 20.64s/it]PcaTrain:  60%|██████    | 223/371 [1:24:03<51:28, 20.87s/it]PcaTrain:  60%|██████    | 224/371 [1:24:29<55:22, 22.60s/it]PcaTrain:  61%|██████    | 225/371 [1:24:59<59:53, 24.61s/it]PcaTrain:  61%|██████    | 226/371 [1:25:08<48:39, 20.13s/it]PcaTrain:  61%|██████    | 227/371 [1:25:33<51:39, 21.53s/it]PcaTrain:  61%|██████▏   | 228/371 [1:25:50<47:57, 20.12s/it]PcaTrain:  62%|██████▏   | 229/371 [1:26:19<54:16, 22.93s/it]PcaTrain:  62%|██████▏   | 230/371 [1:26:44<55:26, 23.59s/it]PcaTrain:  62%|██████▏   | 231/371 [1:26:57<47:20, 20.29s/it]PcaTrain:  63%|██████▎   | 232/371 [1:27:14<44:28, 19.20s/it]PcaTrain:  63%|██████▎   | 233/371 [1:27:35<45:22, 19.73s/it]PcaTrain:  63%|██████▎   | 234/371 [1:27:59<48:31, 21.25s/it]PcaTrain:  63%|██████▎   | 235/371 [1:28:14<43:41, 19.28s/it]PcaTrain:  64%|██████▎   | 236/371 [1:28:36<45:16, 20.12s/it]PcaTrain:  64%|██████▍   | 237/371 [1:28:59<46:46, 20.95s/it]PcaTrain:  64%|██████▍   | 238/371 [1:29:26<50:05, 22.59s/it]PcaTrain:  64%|██████▍   | 239/371 [1:29:42<45:52, 20.85s/it]PcaTrain:  65%|██████▍   | 240/371 [1:30:13<51:54, 23.77s/it]PcaTrain:  65%|██████▍   | 241/371 [1:30:43<55:52, 25.78s/it]PcaTrain:  65%|██████▌   | 242/371 [1:30:46<40:22, 18.78s/it]PcaTrain:  65%|██████▌   | 243/371 [1:30:48<29:33, 13.86s/it]PcaTrain:  66%|██████▌   | 244/371 [1:31:38<52:01, 24.58s/it]PcaTrain:  66%|██████▌   | 245/371 [1:32:03<51:43, 24.63s/it]PcaTrain:  66%|██████▋   | 246/371 [1:32:25<49:50, 23.92s/it]PcaTrain:  67%|██████▋   | 247/371 [1:32:59<55:45, 26.98s/it]PcaTrain:  67%|██████▋   | 248/371 [1:33:08<44:29, 21.70s/it]PcaTrain:  67%|██████▋   | 249/371 [1:33:42<51:09, 25.16s/it]PcaTrain:  67%|██████▋   | 250/371 [1:33:51<41:16, 20.46s/it]PcaTrain:  68%|██████▊   | 251/371 [1:34:11<40:54, 20.45s/it]PcaTrain:  68%|██████▊   | 252/371 [1:34:33<41:25, 20.89s/it]PcaTrain:  68%|██████▊   | 253/371 [1:35:04<47:02, 23.92s/it]PcaTrain:  68%|██████▊   | 254/371 [1:35:15<38:47, 19.90s/it]PcaTrain:  69%|██████▊   | 255/371 [1:35:38<40:11, 20.79s/it]PcaTrain:  69%|██████▉   | 256/371 [1:36:00<40:25, 21.09s/it]PcaTrain:  69%|██████▉   | 257/371 [1:36:23<41:31, 21.85s/it]PcaTrain:  70%|██████▉   | 258/371 [1:36:43<40:05, 21.28s/it]PcaTrain:  70%|██████▉   | 259/371 [1:37:22<49:22, 26.46s/it]PcaTrain:  70%|███████   | 260/371 [1:37:24<35:39, 19.28s/it]PcaTrain:  70%|███████   | 261/371 [1:37:27<26:06, 14.24s/it]PcaTrain:  71%|███████   | 262/371 [1:38:16<45:16, 24.92s/it]PcaTrain:  71%|███████   | 263/371 [1:38:19<32:41, 18.17s/it]PcaTrain:  71%|███████   | 264/371 [1:39:09<49:18, 27.65s/it]PcaTrain:  71%|███████▏  | 265/371 [1:39:31<45:49, 25.94s/it]PcaTrain:  72%|███████▏  | 266/371 [1:39:53<43:29, 24.86s/it]PcaTrain:  72%|███████▏  | 267/371 [1:40:21<44:56, 25.93s/it]PcaTrain:  72%|███████▏  | 268/371 [1:40:50<45:39, 26.60s/it]PcaTrain:  73%|███████▎  | 269/371 [1:40:53<33:35, 19.75s/it]PcaTrain:  73%|███████▎  | 270/371 [1:41:33<43:12, 25.67s/it]PcaTrain:  73%|███████▎  | 271/371 [1:41:36<31:34, 18.95s/it]PcaTrain:  73%|███████▎  | 272/371 [1:42:09<38:19, 23.22s/it]PcaTrain:  74%|███████▎  | 273/371 [1:42:24<33:53, 20.75s/it]PcaTrain:  74%|███████▍  | 274/371 [1:42:47<34:17, 21.21s/it]PcaTrain:  74%|███████▍  | 275/371 [1:43:07<33:31, 20.95s/it]PcaTrain:  74%|███████▍  | 276/371 [1:43:41<39:12, 24.76s/it]PcaTrain:  75%|███████▍  | 277/371 [1:44:00<36:08, 23.07s/it]PcaTrain:  75%|███████▍  | 278/371 [1:44:06<28:00, 18.07s/it]PcaTrain:  75%|███████▌  | 279/371 [1:44:29<29:52, 19.48s/it]PcaTrain:  75%|███████▌  | 280/371 [1:44:56<32:59, 21.75s/it]PcaTrain:  76%|███████▌  | 281/371 [1:45:17<32:19, 21.55s/it]PcaTrain:  76%|███████▌  | 282/371 [1:45:44<34:18, 23.13s/it]PcaTrain:  76%|███████▋  | 283/371 [1:45:47<25:05, 17.11s/it]PcaTrain:  77%|███████▋  | 284/371 [1:46:27<35:01, 24.16s/it]PcaTrain:  77%|███████▋  | 285/371 [1:46:36<27:44, 19.36s/it]PcaTrain:  77%|███████▋  | 286/371 [1:46:58<28:38, 20.22s/it]PcaTrain:  77%|███████▋  | 287/371 [1:47:29<32:45, 23.40s/it]PcaTrain:  78%|███████▊  | 288/371 [1:47:32<24:02, 17.38s/it]PcaTrain:  78%|███████▊  | 289/371 [1:48:17<35:06, 25.69s/it]PcaTrain:  78%|███████▊  | 290/371 [1:48:19<25:15, 18.71s/it]PcaTrain:  78%|███████▊  | 291/371 [1:48:22<18:24, 13.81s/it]PcaTrain:  79%|███████▊  | 292/371 [1:49:22<36:24, 27.66s/it]PcaTrain:  79%|███████▉  | 293/371 [1:49:37<31:16, 24.06s/it]PcaTrain:  79%|███████▉  | 294/371 [1:49:50<26:35, 20.72s/it]PcaTrain:  80%|███████▉  | 295/371 [1:50:27<32:13, 25.45s/it]PcaTrain:  80%|███████▉  | 296/371 [1:50:31<23:49, 19.06s/it]PcaTrain:  80%|████████  | 297/371 [1:51:11<31:07, 25.24s/it]PcaTrain:  80%|████████  | 298/371 [1:51:13<22:28, 18.47s/it]PcaTrain:  81%|████████  | 299/371 [1:51:57<31:11, 25.99s/it]PcaTrain:  81%|████████  | 300/371 [1:52:07<25:14, 21.34s/it]PcaTrain:  81%|████████  | 301/371 [1:52:26<24:00, 20.58s/it]PcaTrain:  81%|████████▏ | 302/371 [1:52:50<24:40, 21.45s/it]PcaTrain:  82%|████████▏ | 303/371 [1:53:23<28:12, 24.88s/it]PcaTrain:  82%|████████▏ | 304/371 [1:53:28<21:08, 18.93s/it]PcaTrain:  82%|████████▏ | 305/371 [1:53:56<24:04, 21.89s/it]PcaTrain:  82%|████████▏ | 306/371 [1:54:33<28:20, 26.16s/it]PcaTrain:  83%|████████▎ | 307/371 [1:54:35<20:19, 19.06s/it]PcaTrain:  83%|████████▎ | 308/371 [1:54:37<14:45, 14.06s/it]PcaTrain:  83%|████████▎ | 309/371 [1:55:40<29:38, 28.68s/it]PcaTrain:  84%|████████▎ | 310/371 [1:55:45<21:46, 21.42s/it]PcaTrain:  84%|████████▍ | 311/371 [1:56:09<22:14, 22.25s/it]PcaTrain:  84%|████████▍ | 312/371 [1:56:40<24:37, 25.04s/it]PcaTrain:  84%|████████▍ | 313/371 [1:57:02<23:11, 23.99s/it]PcaTrain:  85%|████████▍ | 314/371 [1:57:21<21:19, 22.45s/it]PcaTrain:  85%|████████▍ | 315/371 [1:57:47<22:03, 23.64s/it]PcaTrain:  85%|████████▌ | 316/371 [1:57:51<16:18, 17.78s/it]PcaTrain:  85%|████████▌ | 317/371 [1:58:15<17:38, 19.60s/it]PcaTrain:  86%|████████▌ | 318/371 [1:58:39<18:29, 20.93s/it]PcaTrain:  86%|████████▌ | 319/371 [1:59:01<18:15, 21.07s/it]PcaTrain:  86%|████████▋ | 320/371 [1:59:25<18:42, 22.01s/it]PcaTrain:  87%|████████▋ | 321/371 [2:00:02<22:14, 26.69s/it]PcaTrain:  87%|████████▋ | 322/371 [2:00:18<19:01, 23.29s/it]PcaTrain:  87%|████████▋ | 323/371 [2:00:25<14:41, 18.36s/it]PcaTrain:  87%|████████▋ | 324/371 [2:00:47<15:13, 19.44s/it]PcaTrain:  88%|████████▊ | 325/371 [2:01:04<14:24, 18.79s/it]PcaTrain:  88%|████████▊ | 326/371 [2:01:28<15:16, 20.36s/it]PcaTrain:  88%|████████▊ | 327/371 [2:01:51<15:36, 21.29s/it]PcaTrain:  88%|████████▊ | 328/371 [2:02:19<16:38, 23.22s/it]PcaTrain:  89%|████████▊ | 329/371 [2:02:43<16:17, 23.28s/it]PcaTrain:  89%|████████▉ | 330/371 [2:02:46<11:46, 17.23s/it]

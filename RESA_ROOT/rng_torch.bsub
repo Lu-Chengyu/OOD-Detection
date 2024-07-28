@@ -1,0 +1,38 @@
+#!/bin/bash -l
+# Sample script for pytorch job
+
+## Scheduler parameters ##
+
+BSUB -J pca              # job name
+BSUB -o ./logs/bitc.%J.stdout      # optional: Have output written to specific file
+BSUB -e ./logs/bitc.%J.stderr      # optional: Have errors written to specific file
+BSUB -q batch_a100               # optional: use highend nodes w/ Volta GPUs (default: Geforce GPUs)
+BSUB -W 8:00                       # fill in desired wallclock time [hours,]minutes (hours are optional)
+BSUB -n 8                          # min CPU cores,max CPU cores (max cores is optional)
+BSUB -M 81920                       # fill in required amount of RAM (in Mbyte)
+#BSUB -R "span[hosts=1]"          # optional: run on single host (if using more than 1 CPU cores)
+# #BSUB -R "span[ptile=4]"         # optional: fill in to specify cores per node (max 28)
+# #BSUB -P myProject                # optional: fill in cluster project
+BSUB -gpu "num=1"
+
+## Job parameters ##
+
+# Anaconda virtualenv to be used
+# Create before running the job with e.g.
+# conda create -n pytorch-3.5 python=3.5 pytorch torchvision 
+vEnv=ai_mag
+
+# Source environment (optional)
+#. /fs/applications/lsf/latest/conf/profile.lsf
+#. /fs/applications/modules/current/init/bash
+
+# Load modules
+# module purge
+module load conda cuda/10.1.105 cudnn/10.1_v7.6 cudnn/10.1_v7.6
+
+# Activate environment
+# source activate $vEnv
+conda activate resa
+
+# Run your code here (please change, this is only an example)
+python main.py configs/culane.py --pca --load_from /home/ulc2sgh/laneDetectionFeature/RESA_ROOT/work_dirs/CULane/20210522_023000_lr_3e-02_b_6/ckpt/11.pth --gpus 0
